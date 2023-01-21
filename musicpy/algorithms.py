@@ -108,8 +108,8 @@ def samenote_set(a, b):
 def find_similarity(a,
                     b=None,
                     b_type=None,
-                    change_from_first=False,
-                    same_note_special=True,
+                    change_from_first=True,
+                    same_note_special=False,
                     similarity_ratio=0.6,
                     custom_mapping=None):
     current_chord_type = chord_type()
@@ -119,8 +119,8 @@ def find_similarity(a,
             2]
         wholeTypes = current_chord_types.keynames()
         selfname = a.names()
-        rootnote = a[0]
-        possible_chords = [(get_chord(rootnote,
+        root_note = a[0]
+        possible_chords = [(get_chord(root_note,
                                       i,
                                       custom_mapping=current_chord_types), i)
                            for i in wholeTypes]
@@ -184,7 +184,7 @@ def find_similarity(a,
                 chordfrom_type = first[1]
                 if samenotes(a, chordfrom):
                     current_chord_type.chord_speciality = 'root position'
-                    current_chord_type.root = rootnote.name
+                    current_chord_type.root = root_note.name
                     current_chord_type.chord_type = chordfrom_type
                 else:
                     if samenote_set(a, chordfrom):
@@ -289,9 +289,9 @@ def find_similarity(a,
 
 
 def detect_variation(current_chord,
-                     change_from_first=False,
-                     original_first=False,
-                     same_note_special=True,
+                     change_from_first=True,
+                     original_first=True,
+                     same_note_special=False,
                      similarity_ratio=0.6,
                      N=None,
                      custom_mapping=None):
@@ -461,7 +461,7 @@ def detect(current_chord,
                               custom_mapping=custom_mapping)
     current_chord_type.order = []
     root = current_chord[0].degree
-    rootNote = current_chord[0].name
+    root_note = current_chord[0].name
     distance = tuple(i.degree - root for i in current_chord[1:])
     current_detect_types = database.detectTypes if custom_mapping is None else custom_mapping[
         1]
@@ -469,12 +469,30 @@ def detect(current_chord,
         2] if custom_mapping is not None else None
     findTypes = current_detect_types[distance]
     if findTypes != 'not found':
-        current_chord_type.root = rootNote
+        current_chord_type.root = root_note
         current_chord_type.chord_type = findTypes[0]
         return _detect_helper(current_chord_type=current_chord_type,
                               get_chord_type=get_chord_type,
                               show_degree=show_degree,
                               custom_mapping=custom_mapping)
+
+    current_chord_inoctave = current_chord.inoctave()
+    root = current_chord_inoctave[0].degree
+    distance = tuple(i.degree - root for i in current_chord_inoctave[1:])
+    result = current_detect_types[distance]
+    if result != 'not found':
+        current_chord_type.clear()
+        current_invert_msg = inversion_way(current_chord,
+                                           current_chord_inoctave)
+        current_chord_type.root = current_chord_inoctave[0].name
+        current_chord_type.chord_type = result[0]
+        current_chord_type.apply_sort_msg(current_invert_msg,
+                                          change_order=True)
+        return _detect_helper(current_chord_type=current_chord_type,
+                              get_chord_type=get_chord_type,
+                              show_degree=show_degree,
+                              custom_mapping=custom_mapping)
+
     current_chord_type = find_similarity(a=current_chord,
                                          change_from_first=change_from_first,
                                          same_note_special=same_note_special,
@@ -492,12 +510,16 @@ def detect(current_chord,
                                   get_chord_type=get_chord_type,
                                   show_degree=show_degree,
                                   custom_mapping=custom_mapping)
+
     for i in range(1, N):
         current = chord(current_chord.inversion(i).names())
-        root = current[0].degree
-        distance = tuple(i.degree - root for i in current[1:])
-        result1 = current_detect_types[distance]
-        if result1 != 'not found':
+        distance = current.intervalof()
+        result = current_detect_types[distance]
+        if result == 'not found':
+            current = current.inoctave()
+            distance = current.intervalof()
+            result = current_detect_types[distance]
+        if result != 'not found':
             inversion_result = inversion_way(current_chord, current)
             if not isinstance(inversion_result, int):
                 continue
@@ -506,39 +528,21 @@ def detect(current_chord,
                 current_chord_type.chord_speciality = 'inverted chord'
                 current_chord_type.inversion = inversion_result
                 current_chord_type.root = current[0].name
-                current_chord_type.chord_type = result1[0]
+                current_chord_type.chord_type = result[0]
                 current_chord_type._add_order(2)
                 return _detect_helper(current_chord_type=current_chord_type,
                                       get_chord_type=get_chord_type,
                                       show_degree=show_degree,
                                       custom_mapping=custom_mapping)
-        else:
-            current = current.inoctave()
-            root = current[0].degree
-            distance = tuple(i.degree - root for i in current[1:])
-            result1 = current_detect_types[distance]
-            if result1 != 'not found':
-                inversion_result = inversion_way(current_chord, current)
-                if not isinstance(inversion_result, int):
-                    continue
-                else:
-                    current_chord_type.clear()
-                    current_chord_type.chord_speciality = 'inverted chord'
-                    current_chord_type.inversion = inversion_result
-                    current_chord_type.root = current[0].name
-                    current_chord_type.chord_type = result1[0]
-                    current_chord_type._add_order(2)
-                    return _detect_helper(
-                        current_chord_type=current_chord_type,
-                        get_chord_type=get_chord_type,
-                        show_degree=show_degree,
-                        custom_mapping=custom_mapping)
     for i in range(1, N):
         current = chord(current_chord.inversion_highest(i).names())
-        root = current[0].degree
-        distance = tuple(i.degree - root for i in current[1:])
-        result1 = current_detect_types[distance]
-        if result1 != 'not found':
+        distance = current.intervalof()
+        result = current_detect_types[distance]
+        if result == 'not found':
+            current = current.inoctave()
+            distance = current.intervalof()
+            result = current_detect_types[distance]
+        if result != 'not found':
             inversion_high_result = inversion_way(current_chord, current)
             if not isinstance(inversion_high_result, int):
                 continue
@@ -547,33 +551,12 @@ def detect(current_chord,
                 current_chord_type.chord_speciality = 'inverted chord'
                 current_chord_type.inversion = inversion_high_result
                 current_chord_type.root = current[0].name
-                current_chord_type.chord_type = result1[0]
+                current_chord_type.chord_type = result[0]
                 current_chord_type._add_order(2)
                 return _detect_helper(current_chord_type=current_chord_type,
                                       get_chord_type=get_chord_type,
                                       show_degree=show_degree,
                                       custom_mapping=custom_mapping)
-        else:
-            current = current.inoctave()
-            root = current[0].degree
-            distance = tuple(i.degree - root for i in current[1:])
-            result1 = current_detect_types[distance]
-            if result1 != 'not found':
-                inversion_high_result = inversion_way(current_chord, current)
-                if not isinstance(inversion_high_result, int):
-                    continue
-                else:
-                    current_chord_type.clear()
-                    current_chord_type.chord_speciality = 'inverted chord'
-                    current_chord_type.inversion = inversion_high_result
-                    current_chord_type.root = current[0].name
-                    current_chord_type.chord_type = result1[0]
-                    current_chord_type._add_order(2)
-                    return _detect_helper(
-                        current_chord_type=current_chord_type,
-                        get_chord_type=get_chord_type,
-                        show_degree=show_degree,
-                        custom_mapping=custom_mapping)
     if poly_chord_first and N > 3:
         current_chord_type = detect_split(current_chord=current_chord,
                                           N=N,
@@ -748,6 +731,10 @@ def detect(current_chord,
                                   get_chord_type=get_chord_type,
                                   show_degree=show_degree,
                                   custom_mapping=custom_mapping)
+
+
+def detect_chord_by_root(current_chord, root=None):
+    pass
 
 
 def detect_scale_type(current_scale, mode='scale'):

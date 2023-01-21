@@ -998,7 +998,11 @@ class chord:
             result = [i - root for i in others]
         if not translate:
             return result
-        return [database.INTERVAL[x % database.octave] for x in result]
+        return [
+            database.INTERVAL.get(i % (database.octave * 2),
+                                  database.INTERVAL[i % database.octave])
+            for i in result
+        ]
 
     def add(self, note1=None, mode='after', start=0, duration=1 / 4):
         if len(self) == 0:
@@ -5273,7 +5277,10 @@ class chord_type:
     order: list = None
 
     def get_root_position(self):
-        return f'{self.root}{self.chord_type}'
+        if self.root is not None and self.chord_type is not None:
+            return f'{self.root}{self.chord_type}'
+        else:
+            return None
 
     def to_chord(self,
                  root_position=False,
@@ -5308,6 +5315,8 @@ class chord_type:
                 ]
                 current = functools.reduce(chord.on, current_chords)
             else:
+                if self.root is None or self.chord_type is None:
+                    return None
                 current = mp.C(self.get_root_position(),
                                custom_mapping=custom_mapping)
                 if not root_position:
@@ -5328,6 +5337,14 @@ class chord_type:
             return current
 
     def _apply_order(self, current, order):
+        '''
+        order is an integer that represents a type of chord alternation
+        0: omit some notes
+        1: alter some notes
+        2: inversion
+        3: chord voicing
+        4: add a non-chord bass note
+        '''
         if order == 0:
             if self.omit:
                 current = current.omit([
@@ -5370,6 +5387,8 @@ class chord_type:
                     for i in self.polychords[::-1]
                 ])
             else:
+                if self.root is None or self.chord_type is None:
+                    return None
                 current_chord = mp.C(self.get_root_position(),
                                      custom_mapping=custom_mapping)
                 if self.altered:
