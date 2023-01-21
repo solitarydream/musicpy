@@ -751,11 +751,9 @@ def detect(current_chord,
                                   custom_mapping=custom_mapping)
 
 
-def detect_chord_by_root(current_chord, root=None):
+def detect_chord_by_root(current_chord):
     current_chord = current_chord.standardize()
-    if root is None:
-        root = current_chord.notes[0]
-    current_note_interval = current_chord.intervalof()
+    current_note_interval = current_chord.intervalof(translate=True)
 
 
 def detect_scale_type(current_scale, mode='scale'):
