@@ -498,14 +498,32 @@ def detect(current_chord,
                                          same_note_special=same_note_special,
                                          similarity_ratio=similarity_ratio,
                                          custom_mapping=custom_mapping)
+
     if current_chord_type.chord_type is not None:
-        if original_first:
-            if current_chord_type.highest_ratio > original_first_ratio and current_chord_type.altered is None:
-                return _detect_helper(current_chord_type=current_chord_type,
-                                      get_chord_type=get_chord_type,
-                                      show_degree=show_degree,
-                                      custom_mapping=custom_mapping)
-        if current_chord_type.highest_ratio == 1:
+        if (original_first
+                and current_chord_type.highest_ratio > original_first_ratio
+                and current_chord_type.altered is None
+            ) or current_chord_type.highest_ratio == 1:
+            return _detect_helper(current_chord_type=current_chord_type,
+                                  get_chord_type=get_chord_type,
+                                  show_degree=show_degree,
+                                  custom_mapping=custom_mapping)
+
+    current_chord_type = find_similarity(a=current_chord_inoctave,
+                                         change_from_first=change_from_first,
+                                         same_note_special=same_note_special,
+                                         similarity_ratio=similarity_ratio,
+                                         custom_mapping=custom_mapping)
+
+    if current_chord_type.chord_type is not None:
+        if (original_first
+                and current_chord_type.highest_ratio > original_first_ratio
+                and current_chord_type.altered is None
+            ) or current_chord_type.highest_ratio == 1:
+            current_invert_msg = inversion_way(current_chord,
+                                               current_chord_inoctave)
+            current_chord_type.apply_sort_msg(current_invert_msg,
+                                              change_order=True)
             return _detect_helper(current_chord_type=current_chord_type,
                                   get_chord_type=get_chord_type,
                                   show_degree=show_degree,
@@ -734,7 +752,10 @@ def detect(current_chord,
 
 
 def detect_chord_by_root(current_chord, root=None):
-    pass
+    current_chord = current_chord.standardize()
+    if root is None:
+        root = current_chord.notes[0]
+    current_note_interval = current_chord.intervalof()
 
 
 def detect_scale_type(current_scale, mode='scale'):
