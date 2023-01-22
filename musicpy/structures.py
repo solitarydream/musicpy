@@ -9,6 +9,9 @@ else:
 
 
 class note:
+    '''
+    This class represents a single note.
+    '''
 
     def __init__(self, name, num=4, duration=1 / 4, volume=100, channel=None):
         if name not in database.standard:
@@ -174,7 +177,9 @@ class note:
 
 
 class chord:
-    ''' This class can contain a chord with many notes played simultaneously and either has intervals, the default interval is 0.'''
+    '''
+    This class represents a collection of notes with relative distances.
+    '''
 
     def __init__(self,
                  notes,
@@ -2127,6 +2132,9 @@ class chord:
 
 
 class scale:
+    '''
+    This class represents a scale.
+    '''
 
     def __init__(self, start=None, mode=None, interval=None, notes=None):
         self.interval = interval
@@ -2645,6 +2653,9 @@ class scale:
 
 
 class circle_of_fifths:
+    '''
+    This class represents the circle of fifths.
+    '''
     outer = ['C', 'G', 'D', 'A', 'E', 'B', 'Gb', 'Db', 'Ab', 'Eb', 'Bb', 'F']
     inner = [
         'Am', 'Em', 'Bm', 'F#m', 'C#m', 'G#m', 'Ebm', 'Bbm', 'Fm', 'Cm', 'Gm',
@@ -2705,6 +2716,9 @@ class circle_of_fifths:
 
 
 class circle_of_fourths(circle_of_fifths):
+    '''
+    This class represents the circle of fourths.
+    '''
     outer = list(reversed(circle_of_fifths.outer))
     outer.insert(0, outer.pop())
     inner = list(reversed(circle_of_fifths.inner))
@@ -2718,6 +2732,9 @@ class circle_of_fourths(circle_of_fifths):
 
 
 class piece:
+    '''
+    This class represents a piece which contains multiple tracks.
+    '''
 
     def __init__(self,
                  tracks,
@@ -3852,7 +3869,7 @@ class piece:
 
 class tempo:
     '''
-    this is a class to change tempo for the notes after it when it is read,
+    This is a class to change tempo for the notes after it when it is read,
     it can be inserted into a chord, and if the chord is in a piece,
     then it also works for the piece.
     '''
@@ -3885,6 +3902,9 @@ class tempo:
 
 
 class pitch_bend:
+    '''
+    This class represents a pitch bend event in midi.
+    '''
 
     def __init__(self,
                  value,
@@ -3942,6 +3962,9 @@ class pitch_bend:
 
 
 class track:
+    '''
+    This class represents a single track, which content is a chord instance, and has other attributes that define a track.
+    '''
 
     def __init__(self,
                  content,
@@ -4131,9 +4154,9 @@ class track:
 
 class pan:
     '''
-    this is a class to set the pan position for a midi channel,
+    This is a class to set the pan position for a midi channel,
     it only works in piece class or track class, and must be set as one of the elements
-    of the pan list of a piece
+    of the pan list of a piece.
     '''
 
     def __init__(self,
@@ -4178,9 +4201,9 @@ class pan:
 
 class volume:
     '''
-    this is a class to set the volume for a midi channel,
+    This is a class to set the volume for a midi channel,
     it only works in piece class or track class, and must be set as one of the elements
-    of the volume list of a piece
+    of the volume list of a piece.
     '''
 
     def __init__(self,
@@ -4217,6 +4240,9 @@ class volume:
 
 
 class drum:
+    '''
+    This class represents a drum beat.
+    '''
 
     def __init__(self,
                  pattern='',
@@ -5060,6 +5086,9 @@ class event:
 
 
 class beat:
+    '''
+    This class represents a single beat.
+    '''
 
     def __init__(self, duration=1 / 4, dotted=None):
         self.rhythm_name = 'beat'
@@ -5081,6 +5110,9 @@ class beat:
 
 
 class rest_symbol(beat):
+    '''
+    This class represents a single rest.
+    '''
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -5088,6 +5120,9 @@ class rest_symbol(beat):
 
 
 class continue_symbol(beat):
+    '''
+    This class represents a single continuation of previous note.
+    '''
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -5099,6 +5134,9 @@ class rest(rest_symbol):
 
 
 class rhythm(list):
+    '''
+    This class represents a rhythm, which consists of beats, rest symbols and continue symbols.
+    '''
 
     def __init__(self,
                  beat_list,
@@ -5262,6 +5300,9 @@ class rhythm(list):
 
 @dataclass
 class chord_type:
+    '''
+    This class represents a chord type, which defines how a chord is derived precisely.
+    '''
     root: str = None
     chord_type: str = None
     chord_speciality: str = 'root position'
