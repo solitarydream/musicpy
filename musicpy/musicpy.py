@@ -1217,7 +1217,8 @@ def trans(obj, pitch=4, duration=1 / 4, interval=None, custom_mapping=None):
                                  duration=duration,
                                  interval=interval)
     raise ValueError(
-        'not a valid chord representation or chord types not in database')
+        f'{obj} is not a valid chord representation or chord types not in database'
+    )
 
 
 def to_scale(obj, pitch=None):
@@ -1559,7 +1560,7 @@ def riff_to_midi(riff_name, name='temp.mid', output_file=False):
 
     chunk_id = root.getname()
     if chunk_id == b'MThd':
-        raise IOError(f"Already a Standard MIDI format file: {riff_name}")
+        raise IOError(f'Already a Standard MIDI format file: {riff_name}')
     elif chunk_id != b'RIFF':
         chunk_size = root.getsize()
         chunk_raw = root.read(chunk_size)
@@ -1574,11 +1575,11 @@ def riff_to_midi(riff_name, name='temp.mid', output_file=False):
                                                       chunk_raw[0:12])
 
         if hdr_id != b'RMID' or hdr_data != b'data':
-            raise IOError(f"Invalid or unsupported input file: {riff_name}")
+            raise IOError(f'Invalid or unsupported input file: {riff_name}')
         try:
             midi_raw = chunk_raw[12:12 + midi_size]
         except IndexError:
-            raise IOError(f"Broken input file: {riff_name}")
+            raise IOError(f'Broken input file: {riff_name}')
 
     root.close()
     if isinstance(riff_name, str):
@@ -1733,7 +1734,7 @@ def standardize_note(a):
             current_name = a[:-1]
             result = (N(standardize_note(current_name)) - 1).name
         else:
-            raise ValueError('Invalid note name or accidental')
+            raise ValueError(f'Invalid note name or accidental {a}')
         return result
 
 

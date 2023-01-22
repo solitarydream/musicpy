@@ -872,6 +872,8 @@ class chord:
                 if degree in database.degree_match:
                     degree_ls = database.degree_match[degree]
                     temp += temp[0].up(degree_ls[0])
+            else:
+                raise ValueError(f'{obj} is not a valid chord alternation')
         return temp
 
     def get(self, ls):

@@ -588,96 +588,54 @@ def detect(current_chord,
                                   get_chord_type=get_chord_type,
                                   show_degree=show_degree,
                                   custom_mapping=custom_mapping)
-        if not whole_detect:
-            return
         else:
-            detect_var = detect_variation(current_chord=current_chord,
-                                          change_from_first=change_from_first,
-                                          original_first=original_first,
-                                          same_note_special=same_note_special,
-                                          similarity_ratio=similarity_ratio,
-                                          N=N,
-                                          custom_mapping=custom_mapping)
-            if detect_var is None:
-                result_change = detect(current_chord=current_chord,
-                                       change_from_first=not change_from_first,
-                                       original_first=original_first,
-                                       same_note_special=same_note_special,
-                                       whole_detect=False,
-                                       show_degree=show_degree,
-                                       get_chord_type=get_chord_type,
-                                       custom_mapping=custom_mapping)
-                if result_change is None:
-                    current_chord_type = detect_split(
-                        current_chord=current_chord,
-                        N=N,
-                        change_from_first=change_from_first,
-                        original_first=original_first,
-                        same_note_special=same_note_special,
-                        whole_detect=whole_detect,
-                        poly_chord_first=poly_chord_first,
-                        show_degree=show_degree,
-                        custom_mapping=custom_mapping)
-                    return _detect_helper(
-                        current_chord_type=current_chord_type,
-                        get_chord_type=get_chord_type,
-                        show_degree=show_degree,
-                        custom_mapping=custom_mapping)
-                else:
-                    current_chord_type = result_change
-                    return _detect_helper(
-                        current_chord_type=current_chord_type,
-                        get_chord_type=get_chord_type,
-                        show_degree=show_degree,
-                        custom_mapping=custom_mapping)
-            else:
-                current_chord_type = detect_var
+            if not whole_detect:
+                return
+    else:
+        possibles.sort(key=lambda x: x[0].highest_ratio, reverse=True)
+        highest_chord_type, current_inversion = possibles[0]
+        if current_chord_type.chord_type is not None:
+            if current_chord_type.highest_ratio >= similarity_ratio and (
+                    current_chord_type.highest_ratio >=
+                    highest_chord_type.highest_ratio
+                    or highest_chord_type.voicing is not None):
                 return _detect_helper(current_chord_type=current_chord_type,
                                       get_chord_type=get_chord_type,
                                       show_degree=show_degree,
                                       custom_mapping=custom_mapping)
-    possibles.sort(key=lambda x: x[0].highest_ratio, reverse=True)
-    highest_chord_type, current_inversion = possibles[0]
-    if current_chord_type.chord_type is not None:
-        if current_chord_type.highest_ratio >= similarity_ratio and (
-                current_chord_type.highest_ratio >=
-                highest_chord_type.highest_ratio
-                or highest_chord_type.voicing is not None):
+        if highest_chord_type.highest_ratio >= similarity_ratio:
+            if inversion_final:
+                current_invert = current_chord.inversion(current_inversion)
+            else:
+                current_invert = current_chord.inversion_highest(
+                    current_inversion)
+            invfrom_current_invert = inversion_way(current_chord,
+                                                   current_invert)
+            if highest_chord_type.voicing is not None and not isinstance(
+                    invfrom_current_invert, int):
+                current_root_position = highest_chord_type.get_root_position()
+                current_chord_type = find_similarity(
+                    a=current_chord,
+                    b=C(current_root_position),
+                    b_type=highest_chord_type.chord_type,
+                    similarity_ratio=similarity_ratio,
+                    custom_mapping=custom_mapping)
+                current_chord_type.chord_speciality = 'chord voicings'
+                current_chord_type.voicing = invfrom_current_invert
+                current_chord_type._add_order(3)
+            else:
+                current_invert_msg = inversion_way(
+                    current_chord,
+                    highest_chord_type.to_chord(
+                        apply_voicing=False,
+                        custom_mapping=current_custom_chord_types))
+                current_chord_type = highest_chord_type
+                current_chord_type.apply_sort_msg(current_invert_msg,
+                                                  change_order=True)
             return _detect_helper(current_chord_type=current_chord_type,
                                   get_chord_type=get_chord_type,
                                   show_degree=show_degree,
                                   custom_mapping=custom_mapping)
-    if highest_chord_type.highest_ratio >= similarity_ratio:
-        if inversion_final:
-            current_invert = current_chord.inversion(current_inversion)
-        else:
-            current_invert = current_chord.inversion_highest(current_inversion)
-        invfrom_current_invert = inversion_way(current_chord, current_invert)
-        if highest_chord_type.voicing is not None and not isinstance(
-                invfrom_current_invert, int):
-            current_root_position = highest_chord_type.get_root_position()
-            current_chord_type = find_similarity(
-                a=current_chord,
-                b=C(current_root_position),
-                b_type=highest_chord_type.chord_type,
-                similarity_ratio=similarity_ratio,
-                custom_mapping=custom_mapping)
-            current_chord_type.chord_speciality = 'chord voicings'
-            current_chord_type.voicing = invfrom_current_invert
-            current_chord_type._add_order(3)
-        else:
-            current_invert_msg = inversion_way(
-                current_chord,
-                highest_chord_type.to_chord(
-                    apply_voicing=False,
-                    custom_mapping=current_custom_chord_types))
-            current_chord_type = highest_chord_type
-            current_chord_type.apply_sort_msg(current_invert_msg,
-                                              change_order=True)
-        return _detect_helper(current_chord_type=current_chord_type,
-                              get_chord_type=get_chord_type,
-                              show_degree=show_degree,
-                              custom_mapping=custom_mapping)
 
     if not whole_detect:
         return
@@ -690,35 +648,20 @@ def detect(current_chord,
                                       N=N,
                                       custom_mapping=custom_mapping)
         if detect_var is None:
-            result_change = detect(current_chord=current_chord,
-                                   change_from_first=not change_from_first,
-                                   original_first=original_first,
-                                   same_note_special=same_note_special,
-                                   whole_detect=False,
-                                   show_degree=show_degree,
-                                   get_chord_type=get_chord_type,
-                                   custom_mapping=custom_mapping)
-            if result_change is None:
-                current_chord_type = detect_split(
-                    current_chord=current_chord,
-                    N=N,
-                    change_from_first=change_from_first,
-                    original_first=original_first,
-                    same_note_special=same_note_special,
-                    whole_detect=whole_detect,
-                    poly_chord_first=poly_chord_first,
-                    show_degree=show_degree,
-                    custom_mapping=custom_mapping)
-                return _detect_helper(current_chord_type=current_chord_type,
-                                      get_chord_type=get_chord_type,
-                                      show_degree=show_degree,
-                                      custom_mapping=custom_mapping)
-            else:
-                current_chord_type = result_change
-                return _detect_helper(current_chord_type=current_chord_type,
-                                      get_chord_type=get_chord_type,
-                                      show_degree=show_degree,
-                                      custom_mapping=custom_mapping)
+            current_chord_type = detect_split(
+                current_chord=current_chord,
+                N=N,
+                change_from_first=change_from_first,
+                original_first=original_first,
+                same_note_special=same_note_special,
+                whole_detect=whole_detect,
+                poly_chord_first=poly_chord_first,
+                show_degree=show_degree,
+                custom_mapping=custom_mapping)
+            return _detect_helper(current_chord_type=current_chord_type,
+                                  get_chord_type=get_chord_type,
+                                  show_degree=show_degree,
+                                  custom_mapping=custom_mapping)
         else:
             current_chord_type = detect_var
             return _detect_helper(current_chord_type=current_chord_type,
