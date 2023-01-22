@@ -672,20 +672,39 @@ def detect(current_chord,
 
 def detect_chord_by_root(current_chord):
     current_chord = current_chord.standardize()
+    if len(current_chord) < 3:
+        return detect(current_chord, get_chord_type=True)
+    current_chord_inoctave = current_chord.inoctave()
+    current_match_chord = _detect_chord_by_root_helper(current_chord_inoctave)
+    if not current_match_chord:
+        current_match_chord = _detect_chord_by_root_helper(current_chord)
+    if current_match_chord:
+        current_chord_type = find_similarity(
+            a=current_chord,
+            b=C(f'{current_chord[0].name}{current_match_chord}'),
+            b_type=current_match_chord)
+        return current_chord_type
+
+
+def _detect_chord_by_root_helper(current_chord):
+    non_standard_intervals = [
+        database.major_sixth, database.minor_sixth, database.minor_second
+    ]
+    current_match_chord = None
     current_note_interval = current_chord.intervalof(translate=True)
     current_note_interval = [
         database.NAME_OF_INTERVAL[i] for i in current_note_interval
     ]
     current_note_interval.sort()
-    non_standard_intervals = [
-        database.major_sixth, database.minor_sixth, database.minor_second
-    ]
     if not any(i in current_note_interval for i in non_standard_intervals):
         chord_type_intervals = [i[0] for i in database.chordTypes.values()]
         match_chords = [
             database.detectTypes[i][0] for i in chord_type_intervals
             if all(each in i for each in current_note_interval)
         ]
+        if match_chords:
+            current_match_chord = min(match_chords, key=lambda s: len(s))
+    return current_match_chord
 
 
 def detect_scale_type(current_scale, mode='scale'):

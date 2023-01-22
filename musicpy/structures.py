@@ -5333,11 +5333,14 @@ class chord_type:
                  apply_non_chord_bass_note=True,
                  apply_inversion=True,
                  custom_mapping=None,
-                 custom_order=None):
+                 custom_order=None,
+                 root_octave=None):
         if self.type == 'note':
             return chord([self.note_name])
         elif self.type == 'interval':
             current_root = mp.N(self.root)
+            if root_octave is not None:
+                current_root.num = root_octave
             return chord([
                 current_root,
                 current_root.up(database.NAME_OF_INTERVAL[self.interval_name])
@@ -5377,6 +5380,8 @@ class chord_type:
                     for each in current_order:
                         if current_apply[each]:
                             current = self._apply_order(current, each)
+            if root_octave is not None:
+                current = current.reset_octave(root_octave)
             return current
 
     def _apply_order(self, current, order):
