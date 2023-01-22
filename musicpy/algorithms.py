@@ -183,52 +183,21 @@ def find_similarity(a,
                             first[1])][0]
                         current_chord_type.chord_type = None
                         break
-            if highest == 1:
+            if not change_from_first:
                 chordfrom_type = first[1]
-                if samenotes(a, chordfrom):
-                    current_chord_type.chord_speciality = 'root position'
-                    current_chord_type.root = root_note.name
-                    current_chord_type.chord_type = chordfrom_type
-                else:
-                    if samenote_set(a, chordfrom):
-                        current_chord_type.root = chordfrom[0].name
-                        current_chord_type.chord_type = chordfrom_type
-                        current_inv_msg = inversion_way(a, chordfrom)
-                        current_chord_type.apply_sort_msg(current_inv_msg,
-                                                          change_order=True)
-                return current_chord_type
-            else:
-                chordfrom_type = first[1]
-                if samenote_set(a, chordfrom):
-                    current_chord_type.root = chordfrom[0].name
-                    current_chord_type.chord_type = chordfrom_type
-                    current_inv_msg = inversion_way(a, chordfrom)
-                    current_chord_type.apply_sort_msg(current_inv_msg,
-                                                      change_order=True)
-                elif contains(a, chordfrom):
-                    current_omit_msg = omit_from(a, chordfrom)
-                    current_chord_type.chord_speciality = 'root position'
-                    current_chord_type.omit = current_omit_msg
-                    current_chord_type.root = chordfrom[0].name
-                    current_chord_type.chord_type = chordfrom_type
-                    current_chord_type._add_order(0)
-                    current_chord_omit = current_chord_type.to_chord()
-                    if not samenotes(a, current_chord_omit):
-                        current_inv_msg = inversion_way(a, current_chord_omit)
-                        current_chord_type.apply_sort_msg(current_inv_msg,
-                                                          change_order=True)
-                elif len(a) == len(chordfrom):
-                    current_change_msg = change_from(a, chordfrom)
-                    if current_change_msg:
-                        current_chord_type.chord_speciality = 'altered chord'
-                        current_chord_type.altered = current_change_msg
-                        current_chord_type.root = chordfrom[0].name
-                        current_chord_type.chord_type = chordfrom_type
-                        current_chord_type._add_order(1)
-                return current_chord_type
+                current_chord_type = find_similarity(
+                    a=a,
+                    b=chordfrom,
+                    b_type=chordfrom_type,
+                    similarity_ratio=similarity_ratio,
+                    custom_mapping=custom_mapping)
+                current_chord_type.highest_ratio = highest
+            return current_chord_type
         else:
             return current_chord_type
     else:
+        if b_type is None:
+            raise ValueError('requires chord type name of b')
         chordfrom_type = b_type
         if samenotes(a, b):
             b_chord_type = detect(current_chord=b,
@@ -670,10 +639,12 @@ def detect(current_chord,
                                   custom_mapping=custom_mapping)
 
 
-def detect_chord_by_root(current_chord):
+def detect_chord_by_root(current_chord,
+                         get_chord_type=False,
+                         show_degree=False):
     current_chord = current_chord.standardize()
     if len(current_chord) < 3:
-        return detect(current_chord, get_chord_type=True)
+        return detect(current_chord, get_chord_type=get_chord_type)
     current_chord_inoctave = current_chord.inoctave()
     current_match_chord = _detect_chord_by_root_helper(current_chord_inoctave)
     if not current_match_chord:
@@ -683,7 +654,8 @@ def detect_chord_by_root(current_chord):
             a=current_chord,
             b=C(f'{current_chord[0].name}{current_match_chord}'),
             b_type=current_match_chord)
-        return current_chord_type
+        return current_chord_type if get_chord_type else current_chord_type.to_text(
+            show_degree=show_degree)
 
 
 def _detect_chord_by_root_helper(current_chord):
