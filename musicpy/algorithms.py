@@ -144,6 +144,7 @@ def find_similarity(a,
         first = ratios[0]
         highest = first[0]
         chordfrom = possible_chords[wholeTypes.index(first[1])][0]
+        current_chord_type.highest_ratio = highest
         if highest > similarity_ratio:
             if change_from_first:
                 current_chord_type = find_similarity(
@@ -152,6 +153,7 @@ def find_similarity(a,
                     b_type=first[1],
                     similarity_ratio=similarity_ratio,
                     custom_mapping=custom_mapping)
+                current_chord_type.highest_ratio = highest
                 cff_ind = 0
                 while current_chord_type.chord_type is None:
                     cff_ind += 1
@@ -173,6 +175,7 @@ def find_similarity(a,
                             b_type=first[1],
                             similarity_ratio=similarity_ratio,
                             custom_mapping=custom_mapping)
+                        current_chord_type.highest_ratio = highest
                     else:
                         first = ratios[0]
                         highest = first[0]
@@ -188,41 +191,20 @@ def find_similarity(a,
                     current_chord_type.chord_type = chordfrom_type
                 else:
                     if samenote_set(a, chordfrom):
-                        current_inversion_msg = inversion_from(a, chordfrom)
-                        if current_inversion_msg is None:
-                            sort_message = sort_from(a, chordfrom)
-                            current_chord_type.chord_speciality = 'chord voicings'
-                            current_chord_type.voicing = sort_message
-                            current_chord_type.root = chordfrom[0].name
-                            current_chord_type.chord_type = chordfrom_type
-                            current_chord_type._add_order(3)
-                        else:
-                            current_chord_type.chord_speciality = 'inverted chord'
-                            current_chord_type.inversion = current_inversion_msg
-                            current_chord_type.root = chordfrom[0].name
-                            current_chord_type.chord_type = chordfrom_type
-                            current_chord_type._add_order(2)
-                    else:
-                        return current_chord_type
-                current_chord_type.highest_ratio = highest
+                        current_chord_type.root = chordfrom[0].name
+                        current_chord_type.chord_type = chordfrom_type
+                        current_inv_msg = inversion_way(a, chordfrom)
+                        current_chord_type.apply_sort_msg(current_inv_msg,
+                                                          change_order=True)
                 return current_chord_type
             else:
                 chordfrom_type = first[1]
                 if samenote_set(a, chordfrom):
-                    current_inversion_msg = inversion_from(a, chordfrom)
-                    if current_inversion_msg is None:
-                        sort_message = sort_from(a, chordfrom)
-                        current_chord_type.chord_speciality = 'chord voicings'
-                        current_chord_type.voicing = sort_message
-                        current_chord_type.root = chordfrom[0].name
-                        current_chord_type.chord_type = chordfrom_type
-                        current_chord_type._add_order(3)
-                    else:
-                        current_chord_type.chord_speciality = 'inverted chord'
-                        current_chord_type.inversion = current_inversion_msg
-                        current_chord_type.root = chordfrom[0].name
-                        current_chord_type.chord_type = chordfrom_type
-                        current_chord_type._add_order(2)
+                    current_chord_type.root = chordfrom[0].name
+                    current_chord_type.chord_type = chordfrom_type
+                    current_inv_msg = inversion_way(a, chordfrom)
+                    current_chord_type.apply_sort_msg(current_inv_msg,
+                                                      change_order=True)
                 elif contains(a, chordfrom):
                     current_omit_msg = omit_from(a, chordfrom)
                     current_chord_type.chord_speciality = 'root position'
@@ -238,11 +220,7 @@ def find_similarity(a,
                         current_chord_type.root = chordfrom[0].name
                         current_chord_type.chord_type = chordfrom_type
                         current_chord_type._add_order(1)
-                if current_chord_type.chord_type is None:
-                    return current_chord_type
-                else:
-                    current_chord_type.highest_ratio = highest
-                    return current_chord_type
+                return current_chord_type
         else:
             return current_chord_type
     else:
@@ -256,20 +234,11 @@ def find_similarity(a,
             return b_chord_type
         chordfrom = b
         if samenote_set(a, chordfrom):
-            current_inversion_msg = inversion_from(a, chordfrom)
-            if current_inversion_msg is None:
-                sort_message = sort_from(a, chordfrom)
-                current_chord_type.chord_speciality = 'chord voicings'
-                current_chord_type.voicing = sort_message
-                current_chord_type.root = chordfrom[0].name
-                current_chord_type.chord_type = chordfrom_type
-                current_chord_type._add_order(3)
-            else:
-                current_chord_type.chord_speciality = 'inverted chord'
-                current_chord_type.inversion = current_inversion_msg
-                current_chord_type.root = chordfrom[0].name
-                current_chord_type.chord_type = chordfrom_type
-                current_chord_type._add_order(2)
+            current_chord_type.root = chordfrom[0].name
+            current_chord_type.chord_type = chordfrom_type
+            current_inv_msg = inversion_way(a, chordfrom)
+            current_chord_type.apply_sort_msg(current_inv_msg,
+                                              change_order=True)
         elif contains(a, chordfrom):
             current_omit_msg = omit_from(a, chordfrom)
             current_chord_type.chord_speciality = 'root position'
@@ -277,6 +246,11 @@ def find_similarity(a,
             current_chord_type.root = chordfrom[0].name
             current_chord_type.chord_type = chordfrom_type
             current_chord_type._add_order(0)
+            current_chord_omit = current_chord_type.to_chord()
+            if not samenotes(a, current_chord_omit):
+                current_inv_msg = inversion_way(a, current_chord_omit)
+                current_chord_type.apply_sort_msg(current_inv_msg,
+                                                  change_order=True)
         elif len(a) == len(chordfrom):
             current_change_msg = change_from(a, chordfrom)
             if current_change_msg:
@@ -754,6 +728,19 @@ def detect(current_chord,
 def detect_chord_by_root(current_chord):
     current_chord = current_chord.standardize()
     current_note_interval = current_chord.intervalof(translate=True)
+    current_note_interval = [
+        database.NAME_OF_INTERVAL[i] for i in current_note_interval
+    ]
+    current_note_interval.sort()
+    non_standard_intervals = [
+        database.major_sixth, database.minor_sixth, database.minor_second
+    ]
+    if not any(i in current_note_interval for i in non_standard_intervals):
+        chord_type_intervals = [i[0] for i in database.chordTypes.values()]
+        match_chords = [
+            database.detectTypes[i][0] for i in chord_type_intervals
+            if all(each in i for each in current_note_interval)
+        ]
 
 
 def detect_scale_type(current_scale, mode='scale'):

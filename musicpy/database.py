@@ -1,11 +1,11 @@
 class match:
 
-    def __init__(self, keys, values=None):
+    def __init__(self, current_dict):
         # keys and values should both be a list/tuple/set of data,
         # and they should have the same counts
         # if the key itself is given as a dict, then just use it
-        if isinstance(keys, dict):
-            self.dic = keys
+        if isinstance(current_dict, dict):
+            self.dic = current_dict
         else:
             raise ValueError('a dictionary is required')
 
@@ -292,6 +292,13 @@ chordTypes = match({
     ('9sus4', '9sus'): ((5, 7, 10, 14), ),
     ('9sus2', ): ((2, 7, 10, 14), ),
     ('maj9sus4', 'maj9sus', 'M9sus', 'M9sus4'): ((5, 7, 11, 14), ),
+    ('11', 'dominant11', 'dominant 11'): ((4, 7, 10, 14, 17), ),
+    ('maj11', 'M11', 'eleventh', 'major 11', 'major eleventh'):
+    ((4, 7, 11, 14, 17), ),
+    ('m11', 'minor eleventh', 'minor 11'): ((3, 7, 10, 14, 17), ),
+    ('13', 'dominant13', 'dominant 13'): ((4, 7, 10, 14, 17, 21), ),
+    ('maj13', 'major 13', 'M13'): ((4, 7, 11, 14, 17, 21), ),
+    ('m13', 'minor 13'): ((3, 7, 10, 14, 17, 21), ),
     ('13sus4', '13sus'): ((5, 7, 10, 14, 21), (7, 10, 14, 17, 21)),
     ('13sus2', ): ((2, 7, 10, 17, 21), ),
     ('maj13sus4', 'maj13sus', 'M13sus', 'M13sus4'):
@@ -308,13 +315,6 @@ chordTypes = match({
     ('6sus2', ): ((2, 7, 9), ),
     ('5', 'power chord'): ((7, ), ),
     ('5(+octave)', 'power chord(with octave)'): ((7, 12), ),
-    ('maj11', 'M11', 'eleventh', 'major 11', 'major eleventh'):
-    ((4, 7, 11, 14, 17), ),
-    ('m11', 'minor eleventh', 'minor 11'): ((3, 7, 10, 14, 17), ),
-    ('11', 'dominant11', 'dominant 11'): ((4, 7, 10, 14, 17), ),
-    ('13', 'dominant13', 'dominant 13'): ((4, 7, 10, 14, 17, 21), ),
-    ('maj13', 'major 13', 'M13'): ((4, 7, 11, 14, 17, 21), ),
-    ('m13', 'minor 13'): ((3, 7, 10, 14, 17, 21), ),
     ('maj13#11', 'M13#11'): ((4, 7, 11, 14, 18, 21), ),
     ('13#11', ): ((4, 7, 10, 14, 18, 21), ),
     ('fifth_9th', ): ((7, 14), ),
