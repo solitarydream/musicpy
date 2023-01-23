@@ -5582,6 +5582,24 @@ class chord_type:
             current = '\n'.join(current)
         return current
 
+    def get_complexity(self):
+        score = 0
+        if self.type == 'chord':
+            if self.chord_speciality == 'polychord':
+                score += 100
+            else:
+                if self.inversion is not None:
+                    score += 10
+                if self.omit is not None:
+                    score += 20 * len(self.omit)
+                if self.altered is not None:
+                    score += 30 * len(self.altered)
+                if self.non_chord_bass_note is not None:
+                    score += 30
+                if self.voicing is not None:
+                    score += 10
+        return score
+
 
 def _read_notes(note_ls, rootpitch=4):
     intervals = []

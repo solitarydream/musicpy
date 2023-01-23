@@ -362,6 +362,7 @@ def detect(current_chord,
            same_note_special=False,
            whole_detect=True,
            poly_chord_first=False,
+           root_preference=False,
            show_degree=False,
            get_chord_type=False,
            original_first_ratio=0.8,
@@ -440,6 +441,19 @@ def detect(current_chord,
                               get_chord_type=get_chord_type,
                               show_degree=show_degree,
                               custom_mapping=custom_mapping)
+
+    if root_preference:
+        current_chord_type_root_preference = detect_chord_by_root(
+            current_chord,
+            get_chord_type=True,
+            custom_mapping=custom_mapping,
+            inner=True)
+        if current_chord_type_root_preference is not None:
+            return _detect_helper(
+                current_chord_type=current_chord_type_root_preference,
+                get_chord_type=get_chord_type,
+                show_degree=show_degree,
+                custom_mapping=custom_mapping)
 
     current_chord_type = find_similarity(a=current_chord,
                                          change_from_first=change_from_first,
@@ -642,15 +656,18 @@ def detect(current_chord,
 def detect_chord_by_root(current_chord,
                          get_chord_type=False,
                          show_degree=False,
-                         custom_mapping=None):
+                         custom_mapping=None,
+                         return_mode=0,
+                         inner=False):
+    if not inner:
+        current_chord = current_chord.standardize()
+        if len(current_chord) < 3:
+            return detect(current_chord,
+                          get_chord_type=get_chord_type,
+                          custom_mapping=custom_mapping)
     current_chord_types = []
-    current_chord = current_chord.standardize()
-    if len(current_chord) < 3:
-        return detect(current_chord,
-                      get_chord_type=get_chord_type,
-                      custom_mapping=custom_mapping)
     current_match_chord = _detect_chord_by_root_helper(
-        current_chord, custom_mapping=custom_mapping)
+        current_chord, custom_mapping=custom_mapping, inner=inner)
     if current_match_chord:
         current_chord_type = find_similarity(
             a=current_chord,
@@ -661,7 +678,7 @@ def detect_chord_by_root(current_chord,
     current_chord_inoctave = current_chord.inoctave()
     if not samenotes(current_chord_inoctave, current_chord):
         current_match_chord_inoctave = _detect_chord_by_root_helper(
-            current_chord_inoctave, custom_mapping=custom_mapping)
+            current_chord_inoctave, custom_mapping=custom_mapping, inner=inner)
         if current_match_chord_inoctave and current_match_chord_inoctave != current_match_chord:
             current_chord_type_inoctave = find_similarity(
                 a=current_chord,
@@ -669,12 +686,21 @@ def detect_chord_by_root(current_chord,
                 b_type=current_match_chord_inoctave,
                 custom_mapping=custom_mapping)
             current_chord_types.append(current_chord_type_inoctave)
-    return current_chord_types if get_chord_type else [
-        i.to_text(show_degree=show_degree) for i in current_chord_types
-    ]
+    if return_mode == 0:
+        if current_chord_types:
+            current_chord_types = min(current_chord_types,
+                                      key=lambda s: s.get_complexity())
+            return current_chord_types if get_chord_type else current_chord_types.to_text(
+                show_degree=show_degree)
+    else:
+        return current_chord_types if get_chord_type else [
+            i.to_text(show_degree=show_degree) for i in current_chord_types
+        ]
 
 
-def _detect_chord_by_root_helper(current_chord, custom_mapping=None):
+def _detect_chord_by_root_helper(current_chord,
+                                 custom_mapping=None,
+                                 inner=False):
     current_match_chord = None
     current_note_interval = current_chord.intervalof(translate=True)
     current_note_interval = [
@@ -686,18 +712,19 @@ def _detect_chord_by_root_helper(current_chord, custom_mapping=None):
         1]
     current_chord_types = database.chordTypes if not custom_mapping else custom_mapping[
         2]
-    if current_note_interval in current_detect_types:
+    if not inner and current_note_interval in current_detect_types:
         return current_detect_types[current_note_interval][0]
     if not any(i in current_note_interval
                for i in database.non_standard_intervals):
         chord_type_intervals = [i[0] for i in current_chord_types.values()]
         match_chords = [
             current_detect_types[i][0] for i in chord_type_intervals
-            if all(each in i for each in current_note_interval)
+            if all((each in i or each - database.octave in i)
+                   for each in current_note_interval)
         ]
         if match_chords:
-            current_match_chord = min(
-                match_chords, key=lambda s: len(current_chord_types[s][0]))
+            match_chords.sort(key=lambda s: len(s))
+            current_match_chord = match_chords[0]
     return current_match_chord
 
 
