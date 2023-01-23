@@ -365,7 +365,7 @@ def detect(current_chord,
            root_preference=False,
            show_degree=False,
            get_chord_type=False,
-           original_first_ratio=0.8,
+           original_first_ratio=0.86,
            similarity_ratio=0.6,
            custom_mapping=None):
     current_chord_type = chord_type()
