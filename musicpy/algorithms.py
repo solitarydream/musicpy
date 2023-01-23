@@ -1158,11 +1158,13 @@ def detect_in_scale(current_chord,
                 if len(major_or_minor_inds) > 0:
                     first_major_minor_ind = major_or_minor_inds[0]
                     if results[first_major_minor_ind].mode == 'major':
-                        results.insert(first_major_minor_ind + 1,
-                                       results[first_major_minor_ind] - 3)
+                        results.insert(
+                            first_major_minor_ind + 1,
+                            results[first_major_minor_ind].relative_key())
                     elif results[first_major_minor_ind].mode == 'minor':
-                        results.insert(first_major_minor_ind + 1,
-                                       results[first_major_minor_ind] + 3)
+                        results.insert(
+                            first_major_minor_ind + 1,
+                            results[first_major_minor_ind].relative_key())
 
     results = results[:most_like_num]
     if find_altered:

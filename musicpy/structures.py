@@ -2176,6 +2176,9 @@ class scale:
     def __eq__(self, other):
         return type(other) is scale and self.notes == other.notes
 
+    def get_scale_name(self):
+        return f'{self.start} {self.mode} scale'
+
     def standard(self):
         if len(self) == 8:
             standard_notes = [i.name for i in copy(self.notes)[:-1]]
@@ -2453,9 +2456,9 @@ class scale:
 
     def relative_key(self):
         if self.mode == 'major':
-            return scale(self[5], 'minor')
+            return scale(self[5].reset_octave(self[0].num), 'minor')
         elif self.mode == 'minor':
-            return scale(self[2], 'major')
+            return scale(self[2].reset_octave(self[0].num), 'major')
         else:
             raise ValueError(
                 'this function only applies to major and minor scales')
