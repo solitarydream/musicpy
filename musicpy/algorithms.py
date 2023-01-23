@@ -28,12 +28,12 @@ def omit_from(a, b):
     b_first_note = b[0]
     omitnotes_degree = []
     for j in omitnotes:
-        current = database.reverse_precise_degree_match[
-            b[b_notes.index(j)].degree - b_first_note.degree]
-        if current == 'not found':
+        current_degree = b[b_notes.index(j)].degree - b_first_note.degree
+        if current_degree not in database.reverse_precise_degree_match:
             omitnotes_degree.append(j)
         else:
-            omitnotes_degree.append(current)
+            omitnotes_degree.append(
+                database.reverse_precise_degree_match[current_degree])
     omitnotes = omitnotes_degree
     return omitnotes
 
@@ -64,10 +64,12 @@ def change_from(a, b, octave_a=False, octave_b=False, same_degree=True):
         b_first_note = b[0].degree
         for i in range(len(changes)):
             note_name, note_change = changes[i]
-            current_degree = database.reverse_precise_degree_match[
-                bnotes[bnames.index(note_name)] - b_first_note]
-            if current_degree == 'not found':
+            current_b_degree = bnotes[bnames.index(note_name)] - b_first_note
+            if current_b_degree not in database.reverse_precise_degree_match:
                 current_degree = note_name
+            else:
+                current_degree = database.reverse_precise_degree_match[
+                    current_b_degree]
             if note_change > 0:
                 changes[i] = f'b{current_degree}'
             else:
@@ -413,8 +415,8 @@ def detect(current_chord,
         1]
     current_custom_chord_types = custom_mapping[
         2] if custom_mapping is not None else None
-    findTypes = current_detect_types[distance]
-    if findTypes != 'not found':
+    if distance in current_detect_types:
+        findTypes = current_detect_types[distance]
         current_chord_type.root = root_note
         current_chord_type.chord_type = findTypes[0]
         return _detect_helper(current_chord_type=current_chord_type,
@@ -425,8 +427,8 @@ def detect(current_chord,
     current_chord_inoctave = current_chord.inoctave()
     root = current_chord_inoctave[0].degree
     distance = tuple(i.degree - root for i in current_chord_inoctave[1:])
-    result = current_detect_types[distance]
-    if result != 'not found':
+    if distance in current_detect_types:
+        result = current_detect_types[distance]
         current_chord_type.clear()
         current_invert_msg = inversion_way(current_chord,
                                            current_chord_inoctave)
@@ -477,12 +479,11 @@ def detect(current_chord,
     for i in range(1, N):
         current = chord(current_chord.inversion(i).names())
         distance = current.intervalof()
-        result = current_detect_types[distance]
-        if result == 'not found':
+        if distance not in current_detect_types:
             current = current.inoctave()
             distance = current.intervalof()
+        if distance in current_detect_types:
             result = current_detect_types[distance]
-        if result != 'not found':
             inversion_result = inversion_way(current_chord, current)
             if not isinstance(inversion_result, int):
                 continue
@@ -500,12 +501,11 @@ def detect(current_chord,
     for i in range(1, N):
         current = chord(current_chord.inversion_highest(i).names())
         distance = current.intervalof()
-        result = current_detect_types[distance]
-        if result == 'not found':
+        if distance not in current_detect_types:
             current = current.inoctave()
             distance = current.intervalof()
+        if distance in current_detect_types:
             result = current_detect_types[distance]
-        if result != 'not found':
             inversion_high_result = inversion_way(current_chord, current)
             if not isinstance(inversion_high_result, int):
                 continue
@@ -641,50 +641,63 @@ def detect(current_chord,
 
 def detect_chord_by_root(current_chord,
                          get_chord_type=False,
-                         show_degree=False):
+                         show_degree=False,
+                         custom_mapping=None):
     current_chord_types = []
     current_chord = current_chord.standardize()
     if len(current_chord) < 3:
-        return detect(current_chord, get_chord_type=get_chord_type)
-    current_match_chord = _detect_chord_by_root_helper(current_chord)
+        return detect(current_chord,
+                      get_chord_type=get_chord_type,
+                      custom_mapping=custom_mapping)
+    current_match_chord = _detect_chord_by_root_helper(
+        current_chord, custom_mapping=custom_mapping)
     if current_match_chord:
         current_chord_type = find_similarity(
             a=current_chord,
             b=C(f'{current_chord[0].name}{current_match_chord}'),
-            b_type=current_match_chord)
+            b_type=current_match_chord,
+            custom_mapping=custom_mapping)
         current_chord_types.append(current_chord_type)
     current_chord_inoctave = current_chord.inoctave()
-    current_match_chord_inoctave = _detect_chord_by_root_helper(
-        current_chord_inoctave)
-    if current_match_chord_inoctave and current_match_chord_inoctave != current_match_chord:
-        current_chord_type_inoctave = find_similarity(
-            a=current_chord,
-            b=C(f'{current_chord[0].name}{current_match_chord_inoctave}'),
-            b_type=current_match_chord_inoctave)
-        current_chord_types.append(current_chord_type_inoctave)
+    if not samenotes(current_chord_inoctave, current_chord):
+        current_match_chord_inoctave = _detect_chord_by_root_helper(
+            current_chord_inoctave, custom_mapping=custom_mapping)
+        if current_match_chord_inoctave and current_match_chord_inoctave != current_match_chord:
+            current_chord_type_inoctave = find_similarity(
+                a=current_chord,
+                b=C(f'{current_chord[0].name}{current_match_chord_inoctave}'),
+                b_type=current_match_chord_inoctave,
+                custom_mapping=custom_mapping)
+            current_chord_types.append(current_chord_type_inoctave)
     return current_chord_types if get_chord_type else [
         i.to_text(show_degree=show_degree) for i in current_chord_types
     ]
 
 
-def _detect_chord_by_root_helper(current_chord):
-    non_standard_intervals = [
-        database.major_sixth, database.minor_sixth, database.minor_second
-    ]
+def _detect_chord_by_root_helper(current_chord, custom_mapping=None):
     current_match_chord = None
     current_note_interval = current_chord.intervalof(translate=True)
     current_note_interval = [
         database.NAME_OF_INTERVAL[i] for i in current_note_interval
     ]
     current_note_interval.sort()
-    if not any(i in current_note_interval for i in non_standard_intervals):
-        chord_type_intervals = [i[0] for i in database.chordTypes.values()]
+    current_note_interval = tuple(current_note_interval)
+    current_detect_types = database.detectTypes if not custom_mapping else custom_mapping[
+        1]
+    current_chord_types = database.chordTypes if not custom_mapping else custom_mapping[
+        2]
+    if current_note_interval in current_detect_types:
+        return current_detect_types[current_note_interval][0]
+    if not any(i in current_note_interval
+               for i in database.non_standard_intervals):
+        chord_type_intervals = [i[0] for i in current_chord_types.values()]
         match_chords = [
-            database.detectTypes[i][0] for i in chord_type_intervals
+            current_detect_types[i][0] for i in chord_type_intervals
             if all(each in i for each in current_note_interval)
         ]
         if match_chords:
-            current_match_chord = min(match_chords, key=lambda s: len(s))
+            current_match_chord = min(
+                match_chords, key=lambda s: len(current_chord_types[s][0]))
     return current_match_chord
 
 
@@ -693,8 +706,7 @@ def detect_scale_type(current_scale, mode='scale'):
         interval = tuple(current_scale.interval)
     elif mode == 'interval':
         interval = tuple(current_scale)
-    scales = database.detectScale[interval]
-    if scales == 'not found':
+    if interval not in database.detectScale:
         if mode == 'scale':
             current_notes = current_scale.get_scale()
         elif mode == 'interval':
@@ -705,10 +717,11 @@ def detect_scale_type(current_scale, mode='scale'):
                                  get_scales=True,
                                  match_len=True)
         if not result:
-            return 'not found'
+            return None
         else:
             return result[0].mode
     else:
+        scales = database.detectScale[interval]
         return scales[0]
 
 
@@ -1131,9 +1144,8 @@ def detect_in_scale(current_chord,
             first_note_scale.inversion(i)
             for i in range(2, len(first_note_scale))
         ]
-        inversion_scales = [
-            i for i in inversion_scales if i.mode != 'not found'
-        ][:search_all_each_num]
+        inversion_scales = [i for i in inversion_scales
+                            if i.mode is not None][:search_all_each_num]
         results += inversion_scales
         if major_minor_preference:
             major_or_minor_inds = [

@@ -204,19 +204,17 @@ def get_chord(start,
     initial = start.degree
     chordlist = [start]
     current_chord_types = database.chordTypes if custom_mapping is None else custom_mapping
-    interval_pre_chord_type = current_chord_types(pre_chord_type,
-                                                  mode=1,
-                                                  index=ind)
-    if interval_pre_chord_type != 'not found':
+    if pre_chord_type in current_chord_types:
+        interval_pre_chord_type = current_chord_types[pre_chord_type][ind]
         interval = interval_pre_chord_type
     else:
-        interval_current_chord_type = current_chord_types(current_chord_type,
-                                                          mode=1,
-                                                          index=ind)
-        if interval_current_chord_type != 'not found':
+        if current_chord_type in current_chord_types:
+            interval_current_chord_type = current_chord_types[
+                current_chord_type][ind]
             interval = interval_current_chord_type
         else:
-            raise ValueError('could not detect the chord types')
+            raise ValueError(
+                f'could not detect the chord type {current_chord_type}')
     for i in range(len(interval)):
         chordlist.append(degree_to_note(initial + interval[i]))
     return chord(chordlist, duration, intervals, start_time=start_time)

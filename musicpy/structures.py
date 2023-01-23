@@ -2161,7 +2161,7 @@ class scale:
         if mode is None:
             current_mode = mp.alg.detect_scale_type(self.interval,
                                                     mode='interval')
-            if current_mode != 'not found':
+            if current_mode is not None:
                 self.mode = current_mode
 
     def set_mode_name(self, name):
@@ -2252,9 +2252,8 @@ class scale:
             if self.interval is not None:
                 return self.interval
             mode = self.mode.lower()
-            result = database.scaleTypes[mode]
-            if result != 'not found':
-                return result
+            if mode in database.scaleTypes:
+                return database.scaleTypes[mode]
             else:
                 if self.notes is None:
                     raise ValueError(f'could not find scale {self.mode}')
@@ -2492,9 +2491,9 @@ class scale:
                     break
             if not found:
                 return f'{degree} is not a valid roman numerals chord representation'
-        current_degree = database.roman_numerals_dict[degree] - 1
-        if current_degree == 'not found':
+        if degree not in database.roman_numerals_dict[degree]:
             return f'{degree} is not a valid roman numerals chord representation'
+        current_degree = database.roman_numerals_dict[degree] - 1
         current_note = self[current_degree].name
         if natural:
             temp = mp.C(current_note + chord_type)
@@ -2593,10 +2592,10 @@ class scale:
             current_chord = chords[k]
             if isinstance(current_chord, (tuple, list)):
                 current_degree_name = current_chord[0]
+                if current_degree_name not in database.roman_numerals_dict:
+                    return f'{current_chord} is not a valid roman numerals chord representation'
                 current_degree = database.roman_numerals_dict[
                     current_degree_name] - 1
-                if current_degree == 'not found':
-                    return f'{current_chord} is not a valid roman numerals chord representation'
                 current_note = self[current_degree].name
                 if current_degree_name.islower():
                     current_note += 'm'

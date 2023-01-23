@@ -9,31 +9,30 @@ class match:
         else:
             raise ValueError('a dictionary is required')
 
-    def __call__(self, *key, mode=0, index=None):
+    def __call__(self, key, mode=0, index=None):
         # unlike __getitem__, this treat key as a whole to match(mode == 0)
         # when mode == 1, the same as __getitem__,
         # and you can set which index to return in the finding results,
         # if the index is set to None (as default), then return whole results.
         if mode == 0:
-            try:
-                result = self.dic[key]
-                if index is None:
-                    return result
+            result = self.dic[key]
+            if index is None:
+                return result
+            else:
                 return result[index]
-            except:
-                return 'not found'
         elif mode == 1:
             result = self[key[0]]
-            if result == 'not found' or index is None:
+            if index is None:
                 return result
-            return result[index]
+            else:
+                return result[index]
 
     def __getitem__(self, key):
         dic = self.dic
         for i in dic:
             if key in i:
                 return dic[i]
-        return 'not found'
+        raise KeyError(key)
 
     def __contains__(self, obj):
         return any(obj in i for i in self.dic)
@@ -137,30 +136,14 @@ INTERVAL = {
     12: 'perfect octave',
     13: 'minor ninth',
     14: 'major ninth',
+    15: 'augmented ninth',
     17: 'perfect eleventh',
+    18: 'augmented eleventh',
     20: 'minor thirteenth',
     21: 'major thirteenth'
 }
-NAME_OF_INTERVAL = {
-    'perfect unison': 0,
-    'minor second': 1,
-    'major second': 2,
-    'minor third': 3,
-    'major third': 4,
-    'perfect fourth': 5,
-    'diminished fifth': 6,
-    'perfect fifth': 7,
-    'minor sixth': 8,
-    'major sixth': 9,
-    'minor seventh': 10,
-    'major seventh': 11,
-    'perfect octave': 12,
-    'minor ninth': 13,
-    'major ninth': 14,
-    'perfect eleventh': 17,
-    'minor thirteenth': 20,
-    'major thirteenth': 21
-}
+NAME_OF_INTERVAL = {j: i for i, j in INTERVAL.items()}
+
 standard = {
     'C': 0,
     'C#': 1,
@@ -799,3 +782,5 @@ default_choose_drum_beats = [
 default_choose_bass_rhythm = [('b b b b', 1 / 2)]
 
 default_choose_bass_playing_techniques = ['octaves', 'root']
+
+non_standard_intervals = [major_sixth, minor_sixth, minor_second]
