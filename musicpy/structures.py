@@ -1847,7 +1847,7 @@ class chord:
                                                    standardize=standardize,
                                                    choose_nearest=False,
                                                    get_distance=True)
-            result = result1 if distance1 < distance2 else result2
+            result = result2 if distance2 < distance1 else result1
             return result if not get_distance else (result,
                                                     min(distance1, distance2))
         if standardize:
@@ -1860,10 +1860,11 @@ class chord:
         if keep_root:
             root_note = temp.notes[0]
             other_root_note = other.notes[0]
-            new_root_note = mp.closest_note(root_note, other_root_note)
+            new_root_note, current_distance = mp.closest_note(
+                root_note, other_root_note, get_distance=True)
             remain_notes = []
             current_other_notes = other.notes[1:]
-            total_distance = 0
+            total_distance = current_distance
             for each in temp.notes[1:]:
                 current_closest_note, current_distance = mp.closest_note_from_chord(
                     each, current_other_notes, get_distance=True)
