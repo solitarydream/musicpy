@@ -89,7 +89,7 @@ class effect_chain:
             [str(i) for i in self.effects])
 
 
-class channel_rack:
+class daw:
 
     def __init__(self, num=1, name=None, bpm=120):
         self.channel_num = num
@@ -1243,15 +1243,15 @@ def get_wave(sound, mode='sine', bpm=120, volume=None):
     return temp
 
 
-def audio(obj, current_channel_rack, channel_num=0, bpm=None):
+def audio(obj, current_daw, channel_num=0, bpm=None):
     if isinstance(obj, note):
         obj = chord([obj])
     elif isinstance(obj, track):
         obj = build(obj, bpm=obj.bpm, name=obj.name)
-    result = current_channel_rack.export(obj,
-                                         action='get',
-                                         channel_num=channel_num,
-                                         bpm=bpm)
+    result = current_daw.export(obj,
+                                action='get',
+                                channel_num=channel_num,
+                                bpm=bpm)
     return result
 
 
