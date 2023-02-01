@@ -2960,8 +2960,8 @@ class piece:
             current_start_time = temp.start_times[i]
             current.interval[counter] += (whole_length - current.bars() -
                                           current_start_time)
+            unit = copy(current)
             for k in range(n - 1):
-                unit = copy(current)
                 if current_start_time:
                     for j in range(len(current) - 1, -1, -1):
                         current_note = current.notes[j]
