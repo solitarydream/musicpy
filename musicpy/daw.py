@@ -165,13 +165,13 @@ class daw:
         return len(self.channel_names)
 
     def __repr__(self):
-        return '[Channel rack]' + (' ' + self.name if self.name is not None
-                                   else '') + '\n' + '\n'.join([
-                                       ' | '.join([
-                                           self.channel_names[i],
-                                           self.channel_sound_modules_name[i]
-                                       ]) for i in range(self.channel_num)
-                                   ])
+        return '[daw]' + (' ' + self.name if self.name is not None else
+                          '') + '\n' + '\n'.join([
+                              ' | '.join([
+                                  self.channel_names[i],
+                                  self.channel_sound_modules_name[i]
+                              ]) for i in range(self.channel_num)
+                          ])
 
     def __getitem__(self, i):
         return ' | '.join(
