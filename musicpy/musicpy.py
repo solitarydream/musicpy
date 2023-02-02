@@ -843,7 +843,8 @@ def write(current_chord,
         content = tracks_contents[i]
         content_notes = content.notes
         content_intervals = content.interval
-        current_start_time = int(start_times[i] * ticks_per_beat * 4)
+        current_start_time = int(
+            (start_times[i] + content.start_time) * ticks_per_beat * 4)
         for j in range(len(content)):
             current_note = content_notes[j]
             current_type = type(current_note)
