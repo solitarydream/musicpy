@@ -94,7 +94,7 @@ class daw:
     def __init__(self, num=1, name=None, bpm=120):
         self.channel_num = num
         self.channel_names = []
-        self.channel_instruments_name = []
+        self.channel_instrument_names = []
         self.channel_instruments = []
         self.channel_dict = []
         self.name = name
@@ -110,21 +110,21 @@ class daw:
         for i in range(self.channel_num):
             current_channel_name = f'Channel {i+1}'
             self.channel_names.append(current_channel_name)
-            self.channel_instruments_name.append('not loaded')
+            self.channel_instrument_names.append('not loaded')
             self.channel_instruments.append(None)
             self.channel_dict.append(copy(default_notedict))
 
     def add_new_channel(self, name=None):
         current_channel_name = f'Channel {self.channel_num+1}' if name is None else name
         self.channel_names.append(current_channel_name)
-        self.channel_instruments_name.append('not loaded')
+        self.channel_instrument_names.append('not loaded')
         self.channel_instruments.append(None)
         self.channel_dict.append(copy(default_notedict))
         self.channel_num += 1
 
     def delete_channel(self, i):
         del self.channel_names[i]
-        del self.channel_instruments_name[i]
+        del self.channel_instrument_names[i]
         del self.channel_instruments[i]
         del self.channel_dict[i]
         self.channel_num -= 1
@@ -133,14 +133,14 @@ class daw:
         current_ind = i
         if current_ind < self.channel_num:
             self.channel_names[current_ind] = f'Channel {current_ind+1}'
-            self.channel_instruments_name[current_ind] = 'not loaded'
+            self.channel_instrument_names[current_ind] = 'not loaded'
             self.channel_instruments[current_ind] = None
             self.channel_dict[current_ind] = copy(default_notedict)
 
     def clear_all_channels(self):
         self.stop_playing()
         self.channel_names.clear()
-        self.channel_instruments_name = [
+        self.channel_instrument_names = [
             'not loaded' for i in range(self.channel_num)
         ]
         self.channel_instruments.clear()
@@ -153,7 +153,7 @@ class daw:
     def unload(self, i, keep_notedict=False):
         current_ind = i
         if current_ind < self.channel_num:
-            self.channel_instruments_name[current_ind] = 'not loaded'
+            self.channel_instrument_names[current_ind] = 'not loaded'
             self.channel_instruments[current_ind] = None
             if not keep_notedict:
                 self.channel_dict[current_ind] = copy(default_notedict)
@@ -169,13 +169,13 @@ class daw:
             ' ' +
             self.name if self.name is not None else '') + '\n' + '\n'.join([
                 ' | '.join(
-                    [self.channel_names[i], self.channel_instruments_name[i]])
+                    [self.channel_names[i], self.channel_instrument_names[i]])
                 for i in range(self.channel_num)
             ])
 
     def __getitem__(self, i):
         return ' | '.join(
-            [self.channel_names[i], self.channel_instruments_name[i]])
+            [self.channel_names[i], self.channel_instrument_names[i]])
 
     def __delitem__(self, i):
         self.delete_channel(i)
@@ -189,10 +189,10 @@ class daw:
             notedict = self.channel_dict[current_ind]
             self.channel_instruments[current_ind] = load_audiosegments(
                 notedict, sound_path)
-            self.channel_instruments_name[current_ind] = sound_path
+            self.channel_instrument_names[current_ind] = sound_path
         elif os.path.isfile(sound_path):
             self.channel_instruments[current_ind] = rs.sf2_loader(sound_path)
-            self.channel_instruments_name[current_ind] = sound_path
+            self.channel_instrument_names[current_ind] = sound_path
         else:
             raise ValueError(f'cannot find the path {sound_path}')
 
@@ -469,7 +469,7 @@ class daw:
         current_volumes = current_chord.get_volume()
         current_dict = self.channel_dict[current_channel_num]
         current_sounds = self.channel_instruments[current_channel_num]
-        current_sound_path = self.channel_instruments_name[current_channel_num]
+        current_sound_path = self.channel_instrument_names[current_channel_num]
         current_position = 0
         whole_length = len(current_chord)
         for i in range(whole_length):
@@ -646,11 +646,11 @@ class daw:
                 if current_dict[i] in result_audio else None)
             for i in current_dict
         }
-        self.channel_instruments_name[channel_num] = file_path
+        self.channel_instrument_names[channel_num] = file_path
 
     def reload_channel_sounds(self, current_ind):
         try:
-            sound_path = self.channel_instruments_name[current_ind]
+            sound_path = self.channel_instrument_names[current_ind]
             notedict = self.channel_dict[current_ind]
             self.channel_instruments[current_ind] = load_audiosegments(
                 notedict, sound_path)
@@ -805,7 +805,7 @@ class daw:
         return self.channel_instruments[ind]
 
     def instrument_names(self, ind):
-        return self.channel_instruments_name[ind]
+        return self.channel_instrument_names[ind]
 
 
 class pitch:
