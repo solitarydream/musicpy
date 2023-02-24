@@ -213,16 +213,16 @@ class daw:
         if not self.channel_instruments:
             if action == 'export':
                 print(
-                    'You need at least 1 channel with loaded sound modules to export audio files'
+                    'You need at least 1 channel with loaded instruments to export audio files'
                 )
                 return
             elif action == 'play':
                 print(
-                    'You need at least 1 channel with loaded sound modules to play'
+                    'You need at least 1 channel with loaded instruments to play'
                 )
                 return
             elif action == 'get':
-                print('You need at least 1 channel with loaded sound modules')
+                print('You need at least 1 channel with loaded instruments')
                 return
         if action == 'get':
             result = obj
@@ -801,10 +801,10 @@ class daw:
                 current_id.start()
                 current_time += bar_to_real_time(current_intervals[i], bpm, 1)
 
-    def modules(self, ind):
+    def instruments(self, ind):
         return self.channel_instruments[ind]
 
-    def module_names(self, ind):
+    def instrument_names(self, ind):
         return self.channel_instruments_name[ind]
 
 
