@@ -757,7 +757,7 @@ class daw:
         self.channel_instrument_names[channel_num] = file_path
 
     def import_python_instrument(self, channel_num, sound_path):
-        current_instrument = importfile(sound_path).Synth()
+        current_instrument = load_python_instrument(sound_path)
         self.channel_instrument_names[channel_num] = sound_path
         self.channel_instruments[channel_num] = current_instrument
 
@@ -1434,6 +1434,11 @@ def load_mdi(file_path, convert=True):
             for i in current_samples
         }
     return current_mdi
+
+
+def load_python_instrument(file_path):
+    current_instrument = importfile(file_path).Synth()
+    return current_instrument
 
 
 def load_effect(file_path):
