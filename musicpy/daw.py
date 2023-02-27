@@ -213,10 +213,7 @@ class daw:
     def __delitem__(self, i):
         self.delete_channel(i)
 
-    def load(self, i, path=None, mdi=None):
-        if mdi is not None:
-            self.import_mdi_file(i, mdi)
-            return
+    def load(self, i, path=None):
         sound_path = path
         if os.path.isdir(sound_path):
             notedict = self.channel_dict[i]
