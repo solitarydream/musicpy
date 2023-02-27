@@ -365,10 +365,10 @@ class daw:
                             current_silent_audio)
                 current_start_time = bar_to_real_time(current_chord.start_time,
                                                       current_bpm, 1)
-                silent_audio = AudioSegment.silent(
-                    duration=len(current_silent_audio) + current_start_time)
-                silent_audio = silent_audio.overlay(
-                    current_silent_audio, position=current_start_time)
+                silent_audio = None
+                silent_audio = overlay_append(silent_audio,
+                                              current_silent_audio,
+                                              current_start_time)
             for each_effect in self.master_effects:
                 if each_effect.enabled:
                     silent_audio = each_effect.apply_effect(silent_audio)
@@ -491,24 +491,9 @@ class daw:
                 current_start_time = bar_to_real_time(
                     current_start_times[i] + current_track.start_time,
                     current_bpm, 1)
-                current_audio_duration = current_start_time + len(
-                    current_silent_audio)
-                if silent_audio is None:
-                    new_whole_duration = current_audio_duration
-                    silent_audio = AudioSegment.silent(
-                        duration=new_whole_duration)
-                    silent_audio = silent_audio.overlay(
-                        current_silent_audio, position=current_start_time)
-                else:
-                    silent_audio_duration = len(silent_audio)
-                    new_whole_duration = max(current_audio_duration,
-                                             silent_audio_duration)
-                    new_silent_audio = AudioSegment.silent(
-                        duration=new_whole_duration)
-                    new_silent_audio = new_silent_audio.overlay(silent_audio)
-                    new_silent_audio = new_silent_audio.overlay(
-                        current_silent_audio, position=current_start_time)
-                    silent_audio = new_silent_audio
+                silent_audio = overlay_append(silent_audio,
+                                              current_silent_audio,
+                                              current_start_time)
             if check_effect(current_chord):
                 silent_audio = process_effect(silent_audio,
                                               current_chord.effects,
@@ -571,9 +556,7 @@ class daw:
         current_intervals = current_chord.interval
         current_durations = current_chord.get_duration()
         current_volumes = current_chord.get_volume()
-        current_dict = self.channel_dict[current_channel_num]
         current_instrument = self.channel_instruments[current_channel_num]
-        current_sound_path = self.channel_instrument_names[current_channel_num]
         current_position = 0
         whole_length = len(current_chord)
         for i in range(whole_length):
@@ -606,23 +589,26 @@ class daw:
                         if current_sound is None:
                             current_position += interval
                             continue
-                    current_max_time = min(len(current_sound),
-                                           duration + current_fadeout_time)
-                    current_max_fadeout_time = min(len(current_sound),
-                                                   current_fadeout_time)
-                    current_sound = current_sound[:current_max_time]
+                        current_max_time = min(len(current_sound),
+                                               duration + current_fadeout_time)
+                        current_max_fadeout_time = min(len(current_sound),
+                                                       current_fadeout_time)
+                        current_sound = current_sound[:current_max_time]
                 if check_effect(each):
                     current_sound = process_effect(current_sound,
                                                    each.effects,
                                                    bpm=current_bpm)
 
                 if current_fadeout_time != 0 and not isinstance(
-                        each, AudioSegment):
+                        each, AudioSegment
+                ) and current_instrument.__class__.__name__ != 'Synth':
                     current_sound = current_sound.fade_out(
                         duration=current_max_fadeout_time)
-                current_sound += volume
-                current_silent_audio = current_silent_audio.overlay(
-                    current_sound, position=current_position)
+                if current_instrument.__class__.__name__ != 'Synth':
+                    current_sound += volume
+                current_silent_audio = overlay_append(current_silent_audio,
+                                                      current_sound,
+                                                      current_position)
                 current_position += interval
         if current_pan:
             pan_ranges = [
@@ -1461,6 +1447,24 @@ def vst_to_synth(sound_path):
     current_synth.apply_effect = current_synth.vst_apply_effect
     current_synth.name = current_vst.name
     return current_synth
+
+
+def overlay_append(silent_audio, current_silent_audio, current_start_time):
+    current_audio_duration = current_start_time + len(current_silent_audio)
+    if silent_audio is None:
+        new_whole_duration = current_audio_duration
+        silent_audio = AudioSegment.silent(duration=new_whole_duration)
+        silent_audio = silent_audio.overlay(current_silent_audio,
+                                            position=current_start_time)
+    else:
+        silent_audio_duration = len(silent_audio)
+        new_whole_duration = max(current_audio_duration, silent_audio_duration)
+        new_silent_audio = AudioSegment.silent(duration=new_whole_duration)
+        new_silent_audio = new_silent_audio.overlay(silent_audio)
+        new_silent_audio = new_silent_audio.overlay(
+            current_silent_audio, position=current_start_time)
+        silent_audio = new_silent_audio
+    return silent_audio
 
 
 default_notedict = {
