@@ -109,6 +109,47 @@ class Synth:
     def __repr__(self):
         return f'[Synth]\nname: {self.name}\nauthor: {self.author}\ndescription: {self.description}'
 
+    def vst_apply_effect(self, data: AudioSegment):
+        from pedalboard.io import AudioFile
+        from scipy.io import wavfile
+        import numpy as np
+        current_buffer = BytesIO()
+        data.export(current_buffer)
+        result = None
+        self.vst.reset()
+        with AudioFile(current_buffer) as f:
+            while f.tell() < f.frames:
+                chunk = f.read(int(f.samplerate))
+                effected = self.vst(chunk, f.samplerate, reset=False)
+                if result is None:
+                    result = effected
+                else:
+                    result = np.column_stack((result, effected))
+        result = result.T
+        wav_io = BytesIO()
+        wavfile.write(wav_io, data.frame_rate, result)
+        wav_io.seek(0)
+        audio = AudioSegment.from_wav(wav_io)
+        audio = audio.set_sample_width(2)
+        return audio
+
+    def vst_get_parameters(self):
+        result = {i: getattr(self.vst, i) for i in self.vst.parameters}
+        for i, j in result.items():
+            result[i] = j.type(j)
+        return result
+
+    def vst_get_parameter_valid_values(self):
+        result = {i: j.valid_values for i, j in self.vst.parameters.items()}
+        return result
+
+    def vst_update_parameters(self, current_parameters):
+        for i, j in current_parameters.items():
+            try:
+                setattr(self.vst, i, j)
+            except:
+                pass
+
 
 class daw:
 
@@ -887,7 +928,7 @@ class daw:
         return self.channel_instrument_names[ind]
 
     def load_effect(self, channel_num, file_path):
-        current_effect = importfile(file_path).Synth()
+        current_effect = load_effect(file_path)
         current_effect.file_path = file_path
         if channel_num == 'master':
             self.master_effects.append(current_effect)
@@ -1394,9 +1435,25 @@ def load_mdi(file_path, convert=True):
 
 
 def load_effect(file_path):
-    current_effect = importfile(file_path).Synth()
-    current_effect.file_path = file_path
+    current_extension = os.path.splitext(file_path)[1][1:].lower()
+    if current_extension == 'py':
+        current_effect = importfile(file_path).Synth()
+        current_effect.file_path = file_path
+    elif current_extension in ['dll', 'vst3']:
+        current_effect = vst_to_synth(file_path)
+        current_effect.file_path = file_path
     return current_effect
+
+
+def vst_to_synth(sound_path):
+    import pedalboard
+    current_vst = pedalboard.load_plugin(sound_path)
+    current_parameters = list(current_vst.parameters.keys())
+    current_synth = Synth()
+    current_synth.vst = current_vst
+    current_synth.apply_effect = current_synth.vst_apply_effect
+    current_synth.name = current_vst.name
+    return current_synth
 
 
 default_notedict = {
